@@ -1,0 +1,142 @@
+/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f4f4f4;
+}
+
+.chat-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.chat-header, .chat-form-container {
+    padding: 20px;
+    background: #333;
+    color: #fff;
+    text-align: center;
+}
+
+.chat-header {
+    border-bottom: 1px solid #555;
+}
+
+.chat-main {
+    display: flex;
+    flex: 1;
+}
+
+.chat-sidebar {
+    flex: 1;
+    padding: 20px;
+    background: #f4f4f4;
+    border-right: 1px solid #ccc;
+}
+
+.chat-sidebar h3 {
+    margin-bottom: 10px;
+}
+
+.chat-sidebar ul {
+    list-style: none;
+}
+
+.chat-sidebar ul li {
+    padding: 10px;
+    background: #fff;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.chat-sidebar ul li.active {
+    background-color: #ddd;
+}
+
+.chat-messages {
+    flex: 3;
+    padding: 20px;
+    background: #fff;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.message .meta {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.message .meta span {
+    color: #777;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.message .text {
+    background: #f4f4f4;
+    padding: 10px;
+    border-radius: 5px;
+    color: #333;
+}
+
+/* Form */
+.chat-form-container {
+    border-top: 1px solid #eee;
+    padding: 20px;
+}
+
+#chat-form {
+    display: flex;
+    justify-content: space-between;
+}
+
+#msg {
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.btn {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chat-main {
+        flex-direction: column;
+    }
+
+    .chat-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .chat-messages {
+        flex: 1;
+    }
+}

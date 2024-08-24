@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agricerts Chatbot</title>
+    <style>
+        body {
+            margin: 0;
+            padding-bottom: 3rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background-image: url("assets/img/icon-agricert1.001.png");
+            background-repeat: no-repeat;
+            background-position: center;
+
+        }
+
+        .header {
+            width: 100%;
+            height: 60px;
+            background-color: #ffffff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            font-size: 1.5rem;
+            position: fixed;
+            top: 0;
+            z-index: 1;
+            color: black;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #bbb9b9;
+            color: rgb(17, 16, 16);
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+            overflow-y: auto; /* Enable vertical scrolling */
+            height: calc(100vh - 60px); /* Sidebar height adjusted to viewport */
+        }
+        
+
+        .chat-container {
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 60px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column-reverse;
+            overflow: hidden;
+            height: calc(100vh - 60px);
+            padding-bottom: 4rem;
+            max-width: 800px;
+            width: 100%;
+            /* Leave space for the sticky footer */
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 1rem;
+            box-sizing: border-box;
+            flex-grow: 1;
+             }
+
+        #messages>li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #d1e7dd;
+            align-self: flex-end;
+        }
+
+        .user-message .avatar {
+            order: 1;
+            margin-left: 0.5rem;
+            margin-right: 0;
+        }
+
+        .bot-message {
+            background-color: #efefef;
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        #form {
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.5rem;
+            display: flex;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+            position: fixed;
+            bottom: 0;
+            /* Align with the sidebar */
+            z-index: 1;
+            width: inherit;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 30px;
+        }
+
+        #input {
+            font-size: 1rem;
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
+            margin-left: 45px;
+        }
+
+        #input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        #form>button {
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            background-color: transparent;
+        }
+
+        .custom-select {
+            font-family: Arial;
+            font-size: 1rem;
+            padding: 0.5rem;
+            margin-right: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            background-color: white;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/pouchdb/dist/pouchdb.min.js"></script>
+    <script>
+        const db = new PouchDB('chat_sessions');
+        // Save a new chat session
+
+        function saveSession(sessionId, messages) {
+            const session = {
+                _id: sessionId,
+                date: new Date().toISOString(),
+                messages: messages
+            };
+
+            db.put(session).then(() => {
+                console.log('Session saved:', sessionId);
+                loadSessions();
+            }).catch((err) => {
+                console.error('Error saving session:', err);
+            });
+        }
+
+        // Load all sessions, sort by date, and display in the sidebar
+        function loadSessions() {
+            db.allDocs({ include_docs: true, descending: true }).then((result) => {
+                const sessions = result.rows.map(row => row.doc);
+                console.log(sessions)
+                displaySessions(sessions);
+            }).catch((err) => {
+                console.error('Error loading sessions:', err);
+            });
+        }
+        // Display the sessions in the sidebar
+        function displaySessions(sessions) {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.innerHTML = '<p>Chat Sessions:</p>';
+
+            sessions.forEach(session => {
+                const labeltext = session.messages[0].text;
+                const link = document.createElement('a');
+                link.href = '#';
+                //link.textContent = `${session._id} - ${new Date(session.date).toLocaleString()}`;
+                link.textContent = labeltext;
+                link.addEventListener('click', () => {
+                    loadSession(session._id);
+                });
+                sidebar.appendChild(link);
+                sidebar.appendChild(document.createElement('br'));
+                sidebar.appendChild(document.createElement('br'));
+
+            });
+        }
+        // Load a specific session by session ID
+        function loadSession(sessionId) {
+            db.get(sessionId).then((doc) => {
+                const messages = doc.messages;
+                displayMessages(messages);
+            }).catch((err) => {
+                console.error('Error loading session:', err);
+            });
+        }
+        // Display messages in the chat window
+        function displayMessages(messages) {
+            const messagesList = document.getElementById('messages');
+            messagesList.innerHTML = ''; // Clear the current messages
+
+            messages.forEach(message => {
+                const item = document.createElement('li');
+                item.className = message.sender === 'user' ? 'user-message' : 'bot-message';
+                const svg = message.sender === 'user' ? `` : `<svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C14 2.74028 13.5978 3.38663 13 3.73244V4H20C21.6569 4 23 5.34315 23 7V19C23 20.6569 21.6569 22 20 22H4C2.34315 22 1 20.6569 1 19V7C1 5.34315 2.34315 4 4 4H11V3.73244C10.4022 3.38663 10 2.74028 10 2C10 0.895431 10.8954 0 12 0C13.1046 0 14 0.895431 14 2ZM4 6H11H13H20C20.5523 6 21 6.44772 21 7V19C21 19.5523 20.5523 20 20 20H4C3.44772 20 3 19.5523 3 19V7C3 6.44772 3.44772 6 4 6ZM15 11.5C15 10.6716 15.6716 10 16.5 10C17.3284 10 18 10.6716 18 11.5C18 12.3284 17.3284 13 16.5 13C15.6716 13 15 12.3284 15 11.5ZM16.5 8C14.567 8 13 9.567 13 11.5C13 13.433 14.567 15 16.5 15C18.433 15 20 13.433 20 11.5C20 9.567 18.433 8 16.5 8ZM7.5 10C6.67157 10 6 10.6716 6 11.5C6 12.3284 6.67157 13 7.5 13C8.32843 13 9 12.3284 9 11.5C9 10.6716 8.32843 10 7.5 10ZM4 11.5C4 9.567 5.567 8 7.5 8C9.433 8 11 9.567 11 11.5C11 13.433 9.433 15 7.5 15C5.567 15 4 13.433 4 11.5ZM10.8944 16.5528C10.6474 16.0588 10.0468 15.8586 9.55279 16.1056C9.05881 16.3526 8.85858 16.9532 9.10557 17.4472C9.68052 18.5971 10.9822 19 12 19C13.0178 19 14.3195 18.5971 14.8944 17.4472C15.1414 16.9532 14.9412 16.3526 14.4472 16.1056C13.9532 15.8586 13.3526 16.0588 13.1056 16.5528C13.0139 16.7362 12.6488 17 12 17C11.3512 17 10.9861 16.7362 10.8944 16.5528Z" fill="#000000"/>
+</svg>`
+                item.innerHTML = svg + `
+      <div class="message-content">${message.text}</div>
+    `;
+                messagesList.insertBefore(item,messagesList.children[0]);
+            });
+        }   
+    </script>
+</head>
+
+<body>
+    <div class="header">a</div>
+   
+    <div class="chat-container">
+        <div class="chat-area">
+        <ul id="messages"></ul>
+    </div>
+        <form id="form" action="">
+            <!-- <select id="document" class="custom-select">
+                <option value="1">BNS</option>
+                <option value="2">BNSS</option>
+                <option value="3">BSA</option>
+                <option value="4">PMLA</option>
+                <option value="5">IT ACT</option>
+            </select> -->
+            <input id="input" autocomplete="off" placeholder="Type your query" />
+           <button> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000" height="40px" width="40px" version="1.1" id="Layer_1" viewBox="0 0 330 330" xml:space="preserve">
+                <path id="XMLID_222_" d="M250.606,154.389l-150-149.996c-5.857-5.858-15.355-5.858-21.213,0.001  c-5.857,5.858-5.857,15.355,0.001,21.213l139.393,139.39L79.393,304.394c-5.857,5.858-5.857,15.355,0.001,21.213  C82.322,328.536,86.161,330,90,330s7.678-1.464,10.607-4.394l149.999-150.004c2.814-2.813,4.394-6.628,4.394-10.606  C255,161.018,253.42,157.202,250.606,154.389z"/>
+                </svg></button>
+        </form>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+
+
+
+    <script>
+        const socket = io();
+        let currentSessionId = Date.now().toString(); // Use the current timestamp as the session ID
+        let currentMessages = [];
+        const form = document.getElementById('form');
+       // const docu = document.getElementById('document');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+
+                const userMessage = {
+                    sender: 'user',
+                    text: input.value
+                };
+
+                currentMessages.push(userMessage);
+                socket.emit('chat message', input.value);
+                const item = document.createElement('li');
+                item.className = 'user-message';
+                item.innerHTML = `
+          <div class="message-content">${input.value}</div>
+        `;
+                input.value = '';
+                messages.insertBefore(item, messages.firstChild);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        });
+
+        socket.on('chat message', (msg) => {
+            const botMessage = {
+                sender: 'bot',
+                text: msg
+            };
+
+            currentMessages.push(botMessage);
+
+            const item = document.createElement('li');
+            item.className = 'bot-message';
+            item.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M14 2C14 2.74028 13.5978 3.38663 13 3.73244V4H20C21.6569 4 23 5.34315 23 7V19C23 20.6569 21.6569 22 20 22H4C2.34315 22 1 20.6569 1 19V7C1 5.34315 2.34315 4 4 4H11V3.73244C10.4022 3.38663 10 2.74028 10 2C10 0.895431 10.8954 0 12 0C13.1046 0 14 0.895431 14 2ZM4 6H11H13H20C20.5523 6 21 6.44772 21 7V19C21 19.5523 20.5523 20 20 20H4C3.44772 20 3 19.5523 3 19V7C3 6.44772 3.44772 6 4 6ZM15 11.5C15 10.6716 15.6716 10 16.5 10C17.3284 10 18 10.6716 18 11.5C18 12.3284 17.3284 13 16.5 13C15.6716 13 15 12.3284 15 11.5ZM16.5 8C14.567 8 13 9.567 13 11.5C13 13.433 14.567 15 16.5 15C18.433 15 20 13.433 20 11.5C20 9.567 18.433 8 16.5 8ZM7.5 10C6.67157 10 6 10.6716 6 11.5C6 12.3284 6.67157 13 7.5 13C8.32843 13 9 12.3284 9 11.5C9 10.6716 8.32843 10 7.5 10ZM4 11.5C4 9.567 5.567 8 7.5 8C9.433 8 11 9.567 11 11.5C11 13.433 9.433 15 7.5 15C5.567 15 4 13.433 4 11.5ZM10.8944 16.5528C10.6474 16.0588 10.0468 15.8586 9.55279 16.1056C9.05881 16.3526 8.85858 16.9532 9.10557 17.4472C9.68052 18.5971 10.9822 19 12 19C13.0178 19 14.3195 18.5971 14.8944 17.4472C15.1414 16.9532 14.9412 16.3526 14.4472 16.1056C13.9532 15.8586 13.3526 16.0588 13.1056 16.5528C13.0139 16.7362 12.6488 17 12 17C11.3512 17 10.9861 16.7362 10.8944 16.5528Z" fill="#000000"/>
+</svg>
+        <div class="message-content">${msg}</div>
+      `;
+            messages.insertBefore(item, messages.firstChild);
+            messages.scrollTop = messages.scrollHeight;
+              // Save the session every time a new message is added
+
+            saveSession(currentSessionId, currentMessages);
+        });
+window.onload = function() {
+  loadSessions();
+};
+
+    </script>
+</body>
+
+</html>
